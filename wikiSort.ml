@@ -51,18 +51,15 @@ let locate t =
 
 let merge ~cmp t s_a s_b s_c =
   let a_len = s_b-s_a and b_len = s_c-s_b+1 in
-  let a = Array.sub t s_a a_len
-  and b = Array.sub t s_b b_len in
+  let a = Array.sub t s_a a_len in
   let rec aux a' b' i =
-	if cmp a.(a') b.(b') <= 0 then begin
+	if cmp a.(a') t.(s_b + b') <= 0 then begin
 	  t.(i) <- a.(a');
 	  if a'+1 = a_len then
-		for j=1 to b_len-b' do
-		  t.(i+j)<- b.(b'+j-1)
-		done
+		assert(i = s_b + b' -1)
 	  else aux (a'+1) b' (i+1)
 	end else begin
-	  t.(i)<-b.(b');
+	  t.(i)<-t.(s_b + b');
 	  if b'+1 = b_len then
 		for j=1 to a_len-a' do
 		  t.(i+j)<-a.(a'+j-1)
