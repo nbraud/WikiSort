@@ -6,9 +6,9 @@ let swap t =
   fun a b ->
 	assert(a < len);
 	assert(b < len);
-	let tmp = Array.unsafe_get t a in
-	Array.set t a @@ Array.unsafe_get t b;
-	Array.set t b tmp
+	let tmp = t.(a) in
+	t.(a) <- t.(b);
+	t.(b) <- tmp
 
 let swap_range t =
   let len = Array.length t
@@ -55,10 +55,10 @@ let merge t s_a s_b s_c =
   and b = Array.sub t s_b b_len in
   let rec aux a' b' i =
 	if a.(a') <= b.(b') then begin
-	  t.(i)<-a.(a');
+	  t.(i) <- a.(a');
 	  if a'+1 = a_len then
 		for j=1 to b_len-b' do
-		  t.(i+j)<-b.(b'+j-1)
+		  t.(i+j)<- b.(b'+j-1)
 		done
 	  else aux (a'+1) b' (i+1)
 	end else begin
@@ -95,4 +95,4 @@ let rec merge_sort t a len =
 	merge    t a (a+len/2) (a+len-1)
   end
 
-let t = Array.init 10 (fun x -> x) in rev t 0 10; merge_sort t 0 10; t
+(* let t = Array.init 10 (fun x -> x) in rev t 0 10; merge_sort t 0 10; t *)
