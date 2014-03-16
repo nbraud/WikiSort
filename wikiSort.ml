@@ -49,12 +49,12 @@ let locate t =
 	  | i -> if t.(i) = x then i else loop (i-1)
 	in loop len
 
-let merge t s_a s_b s_c =
+let merge ~cmp t s_a s_b s_c =
   let a_len = s_b-s_a and b_len = s_c-s_b+1 in
   let a = Array.sub t s_a a_len
   and b = Array.sub t s_b b_len in
   let rec aux a' b' i =
-	if a.(a') <= b.(b') then begin
+	if cmp a.(a') b.(b') <= 0 then begin
 	  t.(i) <- a.(a');
 	  if a'+1 = a_len then
 		for j=1 to b_len-b' do
@@ -71,12 +71,12 @@ let merge t s_a s_b s_c =
 	end in
   aux 0 0 s_a
 
-let insertion_sort t a len =
+let insertion_sort ~cmp t a len =
   for i=a+1 to a+len-1 do
 	let tmp = t.(i) in
 	begin try
 	  for j=i downto a+1 do
-		if t.(j-1) <= tmp then begin
+		if cmp t.(j-1) tmp <= 0 then begin
 		  t.(j)<-tmp;
 		  raise Exit
 		end;
@@ -86,13 +86,16 @@ let insertion_sort t a len =
 	with Exit -> () end
   done
 
-let rec merge_sort t a len =
-  if len < 4 then
-	insertion_sort t a len
+let rec aux_sort ~cmp t a len =
+  if len < 32 then
+	insertion_sort ~cmp t a len
   else begin
-	merge_sort t a (len/2);
-	merge_sort t (a+len/2) (len-len/2);
-	merge    t a (a+len/2) (a+len-1)
+	aux_sort ~cmp t a (len/2);
+	aux_sort ~cmp t (a+len/2) (len-len/2);
+	merge    ~cmp t a (a+len/2) (a+len-1)
   end
+
+let merge_sort cmp t =
+  aux_sort ~cmp t 0 @@ Array.length t
 
 (* let t = Array.init 10 (fun x -> x) in rev t 0 10; merge_sort t 0 10; t *)
