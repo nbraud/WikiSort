@@ -92,7 +92,13 @@ let rec aux_sort ~cmp t a len =
   else begin
 	aux_sort ~cmp t a (len/2);
 	aux_sort ~cmp t (a+len/2) (len-len/2);
-	merge    ~cmp t a (a+len/2) (a+len-1)
+
+	if cmp t.(a + len/2 -1) t.(a + len/2) <= 0
+	then () (* in order *)
+	else if (cmp t.(a) t.(a + len -1) > 0) && (len mod 2 = 0)
+	then (* [A][B] in reverse order -> [B][A] *)
+	  swap_range t a (a + len/2) (len/2)
+	else merge ~cmp t a (a+len/2) (a+len-1)
   end
 
 let merge_sort cmp t =
