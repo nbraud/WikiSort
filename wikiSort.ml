@@ -31,7 +31,7 @@ let rev t =
 
 (* let t = Array.init 10 (fun x -> x) in rev t 0 10; t *)
 
-let rotate t =
+let rotate t = (* TODO: Optimize for big rotations *)
   let rev = rev t in
   fun a len shift ->
 	let shift = if shift < 0 then shift+len else shift in
