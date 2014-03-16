@@ -50,7 +50,7 @@ let locate t =
 	in loop len
 
 let merge t s_a s_b s_c =
-  let a_len = s_b-s_a-1 and b_len = s_c-s_b-1 in
+  let a_len = s_b-s_a and b_len = s_c-s_b+1 in
   let a = Array.sub t s_a a_len
   and b = Array.sub t s_b b_len in
   let rec aux a' b' i =
@@ -71,16 +71,28 @@ let merge t s_a s_b s_c =
 	end in
   aux 0 0 s_a
 
+let insertion_sort t a len =
+  for i=a+1 to a+len-1 do
+	let tmp = t.(i) in
+	begin try
+	  for j=i downto a+1 do
+		if t.(j-1) <= tmp then begin
+		  t.(j)<-tmp;
+		  raise Exit
+		end;
+		t.(j)<-t.(j-1);
+	  done;
+	  t.(a)<- tmp
+	with Exit -> () end
+  done
+
 let rec merge_sort t a len =
-  if len = 2 then
-	begin if t.(a) > t.(a+1) then
-		swap t a (a+1)
-	end
-  else if len > 2 then begin
+  if len < 4 then
+	insertion_sort t a len
+  else begin
 	merge_sort t a (len/2);
 	merge_sort t (a+len/2) (len-len/2);
 	merge    t a (a+len/2) (a+len-1)
   end
 
-#trace merge_sort;;
 let t = Array.init 10 (fun x -> x) in rev t 0 10; merge_sort t 0 10; t
