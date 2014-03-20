@@ -1,6 +1,29 @@
 let is_safe ~len ?(size = 1) i =
   assert((i >= 0) && (i + size <= len) && (i + size >= 0))
 
+let ipow =
+  let rec aux acc x = function
+	| 0 -> acc
+	| i -> aux (if i mod 2 = 0 then acc else (x*acc)) (x*x) (i/2)
+  in aux 1
+;;
+
+(* Integer square root *)
+let isqrt n =
+  let rec aux x =
+	let x' = (x + (n/x) + (if n mod x =0 then 0 else 1))/2 in
+	if x' = x
+	then x
+	else aux x'
+  in
+  let d = truncate (log10 (float n)) +1 in
+  let x =
+	if d mod 2 = 0
+	then ipow 10 ((d-2)/2) * 7
+	else ipow 10 ((d-1)/2) * 2
+  in aux x
+;;
+
 let swap t =
   let len = Array.length t in
   fun a b ->
@@ -49,24 +72,31 @@ let locate t =
 	  | i -> if t.(i) = x then i else loop (i-1)
 	in loop len
 
-let merge ~cmp t s_a s_b s_c =
+(* merge the sorted subarrays [s_a; s_b[ and [s_b; s_c]
+   while using subarray [s_buff; s_buff+a_len] as buffer if available
+   (the buffer is shuffled at the end of the merge) *)
+let merge ~cmp t ?s_buff s_a s_b s_c =
   let a_len = s_b-s_a and b_len = s_c-s_b+1 in
-  let a = Array.sub t s_a a_len in
+  let (get_a,put_a) = match s_buff with
+	  None   -> let a = Array.sub t s_a a_len in
+				(fun i -> a.(i)), (fun i j -> t.(i) <- a.(j))
+	| Some s -> let _ = swap_range t s_a s a_len in
+				(fun i -> t.(s+i)),(fun i j -> swap t i (s+j))
+  in
   let rec aux a' b' i =
-	if cmp a.(a') t.(s_b + b') <= 0 then begin
-	  t.(i) <- a.(a');
-	  if a'+1 = a_len then
-		assert(i = s_b + b' -1)
-	  else aux (a'+1) b' (i+1)
-	end else begin
-	  t.(i)<-t.(s_b + b');
-	  if b'+1 = b_len then
-		for j=1 to a_len-a' do
-		  t.(i+j)<-a.(a'+j-1)
-		done
-	  else aux a' (b'+1) (i+1)
-	end in
-
+    if cmp (get_a a') t.(s_b + b') <= 0 then begin
+	  put_a i a';
+      if a'+1 = a_len then
+        assert(i = s_b + b' -1)
+      else aux (a'+1) b' (i+1)
+    end else begin
+      t.(i)<-t.(s_b + b');
+      if b'+1 = b_len then
+        for j=1 to a_len-a' do
+		  put_a (i+j) (a'+j-1)
+        done
+      else aux a' (b'+1) (i+1)
+    end in
   if cmp t.(s_a) t.(s_b) <= 0
   then () (* in order *)
   else if (cmp t.(s_a) t.(s_c) > 0) && (a_len = b_len)
@@ -94,10 +124,20 @@ let rec aux_sort ~cmp t a len =
   if len < 32 then
 	insertion_sort ~cmp t a len
   else begin
-	aux_sort ~cmp t a (len/2);
-	aux_sort ~cmp t (a+len/2) (len-len/2);
+	let mid        = a + len/2 + 1
+	and block_size = isqrt (len/2)  in
+	let nb_block   = (len/2)  /  block_size
+	and rem        = (len/2) mod block_size in
 
-	merge ~cmp t a (a+len/2) (a+len-1)
+	aux_sort ~cmp t (a+len/2) (len-len/2);
+	for i = 1 to nb_block-1 do
+	  let s = mid - i*block_size in
+	  aux_sort ~cmp t s block_size;
+	  merge ~cmp t ~s_buff:a s (s+block_size) (a+len-1)
+	done;
+
+	aux_sort ~cmp t a (block_size+rem);
+	merge ~cmp t a (a+block_size+rem) (a+len-1);
   end
 
 let merge_sort cmp t =
