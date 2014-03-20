@@ -66,7 +66,14 @@ let merge ~cmp t s_a s_b s_c =
 		done
 	  else aux a' (b'+1) (i+1)
 	end in
-  aux 0 0 s_a
+
+  if cmp t.(s_a) t.(s_b) <= 0
+  then () (* in order *)
+  else if (cmp t.(s_a) t.(s_c) > 0) && (a_len = b_len)
+  (* TODO: Handle other cases *)
+  then (* [A][B] in reverse order -> [B][A] *)
+	swap_range t s_a s_b a_len
+  else aux 0 0 s_a
 
 let insertion_sort ~cmp t a len =
   for i=a+1 to a+len-1 do
@@ -90,12 +97,7 @@ let rec aux_sort ~cmp t a len =
 	aux_sort ~cmp t a (len/2);
 	aux_sort ~cmp t (a+len/2) (len-len/2);
 
-	if cmp t.(a + len/2 -1) t.(a + len/2) <= 0
-	then () (* in order *)
-	else if (cmp t.(a) t.(a + len -1) > 0) && (len mod 2 = 0)
-	then (* [A][B] in reverse order -> [B][A] *)
-	  swap_range t a (a + len/2) (len/2)
-	else merge ~cmp t a (a+len/2) (a+len-1)
+	merge ~cmp t a (a+len/2) (a+len-1)
   end
 
 let merge_sort cmp t =
